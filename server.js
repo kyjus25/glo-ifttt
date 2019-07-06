@@ -13,19 +13,25 @@ expressApp.use(bodyParser.urlencoded({ extended: false }));
 let queue = [];
 
 expressApp.post('/glo/webhook', function (req, res) {
-    if (req.body.hasOwnProperty('comment')) {
-        const queueItem = {
-            created_at: Date.now(),
-            card_title: req.body.comment.text,
-            meta: {
-                id: Date.now(),
-                timestamp: Date.now()
-            }
-        };
-        queue.push(queueItem);
-        notifyIFTTT();
-    }
-    console.log(req);
+    // console.log('webhook');
+    const queueItem = {
+        event: req.body.action,
+        board_id: req.body.hasOwnProperty('board') ? req.body.board.id : '',
+        board_name: req.body.hasOwnProperty('board') ? req.body.board.name : '',
+        column_title: req.body.hasOwnProperty('column') ? req.body.column.name : '',
+        card_title: req.body.hasOwnProperty('card') ? req.body.card.name : '',
+        comment_text: req.body.hasOwnProperty('comment') ? req.body.comment.text : '',
+        person: req.body.sender.name,
+        timestamp: Date.now(),
+        meta: {
+            id: Date.now(),
+            timestamp: Date.now()
+        }
+    };
+    queue.push(queueItem);
+    notifyIFTTT();
+
+    // console.log(req);
     res.send({});
 });
 
@@ -46,18 +52,10 @@ expressApp.get('/ifttt/v1/user/info', function (req, res) {
 
 });
 
-expressApp.post('/ifttt/v1/triggers/comment', function (req, res) {
-    console.log(req.body);
+expressApp.post('/ifttt/v1/triggers/webhook', function (req, res) {
+    // console.log(req.body);
     const token = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : null;
     if (token) {
-        // request.get('https://gloapi.gitkraken.com/v1/glo/user?access_token=' + token + '&fields=created_date,email,name,username',
-        //     (error, response, body) => {
-        //         if (error) {
-        //             console.error(error);
-        //             return
-        //         }
-        //         res.send({data: JSON.parse(body)});
-        //     });
         console.log('queue is ', queue);
         const response = {
             data: queue
@@ -70,6 +68,30 @@ expressApp.post('/ifttt/v1/triggers/comment', function (req, res) {
 
 });
 
+expressApp.post('/ifttt/v1/triggers/webhook/fields/board/options', function (req, res) {
+    const token = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : null;
+    if (token) {
+        request.get('https://gloapi.gitkraken.com/v1/glo/boards?access_token=' + token,
+            (error, req_response, body) => {
+                if (error) {
+                    console.error(error);
+                    return
+                }
+                const boards = [];
+                const jsonBody = JSON.parse(body);
+                for (let i = 0; i < jsonBody.length; i++) {
+                    boards.push({label: jsonBody[i].name, value: jsonBody[i].id});
+                }
+                const response = {
+                    data: boards
+                };
+                res.send(response);
+            });
+    } else {
+        res.sendStatus(401);
+    }
+});
+
 expressApp.get('/ifttt/v1/status', function (req, res) {
     if (hasValidChannelKey(req)) {
         res.send({data: {message: 'ONLINE'}});
@@ -79,7 +101,7 @@ expressApp.get('/ifttt/v1/status', function (req, res) {
 });
 
 function notifyIFTTT() {
-    const trigger_identity = 'cd664e533a437d232f2f57259b89c5ee30748f89';
+    const trigger_identity = '0bd87892fb21654e1c4278f14a1707db7e7836d6';
     const payload = {
         data: [
             {
