@@ -53,9 +53,26 @@ expressApp.get('/ifttt/v1/user/info', function (req, res) {
 });
 
 expressApp.post('/ifttt/v1/triggers/webhook', function (req, res) {
-    // console.log(req.body);
+    const dto = req.body.triggerFields.dto;
+    const event = req.body.triggerFields.event;
+    const boardId = req.body.triggerFields.board;
     const token = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : null;
     if (token) {
+        queue = queue.filter(item => item.board_id === boardId);
+        queue = queue.filter(item => item.event.toLowerCase().includes(event.toLowerCase()));
+        if (dto !== 'any') {
+            switch(dto) {
+                case 'card':
+                    queue = queue.filter(item => item.card_title !== '');
+                    break;
+                case 'column':
+                    queue = queue.filter(item => item.column_title !== '');
+                    break;
+                case 'comment':
+                    queue = queue.filter(item => item.comment_text !== '');
+                    break;
+            }
+        }
         console.log('queue is ', queue);
         const response = {
             data: queue
