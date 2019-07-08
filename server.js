@@ -101,6 +101,7 @@ expressApp.post('/ifttt/v1/triggers/webhook/fields/board/options', function (req
             (error, req_response, body) => {
                 if (error) {
                     console.error(error);
+                    res.sendStatus(500);
                     return
                 }
                 const boards = [];
@@ -121,9 +122,9 @@ expressApp.post('/ifttt/v1/triggers/webhook/fields/board/options', function (req
 expressApp.post('/ifttt/v1/actions/create_card', function (req, res) {
     const token = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : null;
     if (token) {
-        console.log(req.body);
-        console.log('##########');
-        console.log(req.headers);
+        // console.log(req.body);
+        // console.log('##########');
+        // console.log(req.headers);
 
         // console.log(req.body['actionFields']['board_and_column']);
         // console.log(req.body['actionFields']['card_title']);
@@ -148,6 +149,7 @@ expressApp.post('/ifttt/v1/actions/create_card', function (req, res) {
         request(options, (error, req_response, body) => {
             if (error) {
                 console.error(error);
+                res.sendStatus(500);
                 return
             }
             const response = {
@@ -167,6 +169,7 @@ expressApp.post('/ifttt/v1/actions/create_card/fields/board_and_column/options',
             (error, req_response, body) => {
                 if (error) {
                     console.error(error);
+                    res.sendStatus(500);
                     return
                 }
                 const boards_columns = [];
