@@ -41,14 +41,15 @@ expressApp.get('/ifttt/v1/user/info', function (req, res) {
     if (token) {
         request.get('https://gloapi.gitkraken.com/v1/glo/user?access_token=' + token + '&fields=created_date,email,name,username',
             (error, response, body) => {
-                if (error) {
+                if (error || JSON.parse(body).hasOwnProperty('message')) {
                     console.error(error);
+                    res.status(401).send({errors: [{"message": "Something went wrong!"}]});
                     return
                 }
                 res.send({data: JSON.parse(body)});
             });
     } else {
-        res.sendStatus(401);
+        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
     }
 
 });
@@ -89,7 +90,7 @@ expressApp.post('/ifttt/v1/triggers/webhook', function (req, res) {
         queue = [];
         res.send(response);
     } else {
-        res.sendStatus(401);
+        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
     }
 
 });
@@ -99,9 +100,9 @@ expressApp.post('/ifttt/v1/triggers/webhook/fields/board/options', function (req
     if (token) {
         request.get('https://gloapi.gitkraken.com/v1/glo/boards?access_token=' + token,
             (error, req_response, body) => {
-                if (error) {
+                if (error || body.hasOwnProperty('message')) {
                     console.error(error);
-                    res.sendStatus(500);
+                    res.status(401).send({errors: [{"message": "Something went wrong!"}]});
                     return
                 }
                 const boards = [];
@@ -115,7 +116,7 @@ expressApp.post('/ifttt/v1/triggers/webhook/fields/board/options', function (req
                 res.send(response);
             });
     } else {
-        res.sendStatus(401);
+        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
     }
 });
 
@@ -128,8 +129,13 @@ expressApp.post('/ifttt/v1/actions/create_card', function (req, res) {
 
         // console.log(req.body['actionFields']['board_and_column']);
         // console.log(req.body['actionFields']['card_title']);
-        const boardId = req.body['actionFields']['board_and_column'].split('/')[0];
-        const columnId = req.body['actionFields']['board_and_column'].split('/')[1];
+        let boardId = '';
+        let columnId = '';
+        if (req.body['actionFields']['board_and_column']) {
+            boardId = req.body['actionFields']['board_and_column'].split('/')[0];
+            columnId = req.body['actionFields']['board_and_column'].split('/')[1];
+        }
+
 
         console.log('BOARD ID', boardId);
         console.log('COLUMN ID', columnId);
@@ -147,9 +153,10 @@ expressApp.post('/ifttt/v1/actions/create_card', function (req, res) {
         };
 
         request(options, (error, req_response, body) => {
-            if (error) {
+            console.log(body);
+            if (error || body.hasOwnProperty('message')) {
                 console.error(error);
-                res.sendStatus(500);
+                res.status(401).send({errors: [{"message": "Something went wrong!"}]});
                 return
             }
             const response = {
@@ -158,7 +165,7 @@ expressApp.post('/ifttt/v1/actions/create_card', function (req, res) {
             res.send(response);
         });
     } else {
-        res.sendStatus(401);
+        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
     }
 });
 
@@ -167,9 +174,9 @@ expressApp.post('/ifttt/v1/actions/create_card/fields/board_and_column/options',
     if (token) {
         request.get('https://gloapi.gitkraken.com/v1/glo/boards?fields=columns,name&access_token=' + token,
             (error, req_response, body) => {
-                if (error) {
+                if (error || body.hasOwnProperty('message')) {
                     console.error(error);
-                    res.sendStatus(500);
+                    res.status(401).send({errors: [{"message": "Something went wrong!"}]});
                     return
                 }
                 const boards_columns = [];
@@ -187,7 +194,7 @@ expressApp.post('/ifttt/v1/actions/create_card/fields/board_and_column/options',
                 res.send(response);
             });
     } else {
-        res.sendStatus(401);
+        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
     }
 });
 
@@ -195,7 +202,40 @@ expressApp.get('/ifttt/v1/status', function (req, res) {
     if (hasValidChannelKey(req)) {
         res.send({data: {message: 'ONLINE'}});
     } else {
-        res.sendStatus(401);
+        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
+    }
+});
+
+expressApp.post('/ifttt/v1/test/setup', function (req, res) {
+    if (hasValidChannelKey(req)) {
+        const token = 'ad5f60ba0b12273004d90af2ddbab5dd4f26e8ca';
+        const response = {
+            accessToken: token,
+            samples: {
+                triggers: {
+                    webhook: {
+                        board: "test",
+                        dto: "test",
+                        event: "test"
+                    }
+                },
+                actions: {
+                    create_card: {
+                        board_and_column: "test",
+                        card_title: "test"
+                    }
+                },
+                actionRecordSkipping: {
+                    create_card: {
+                        board_and_column: "test",
+                        card_title: "test"
+                    }
+                }
+            }
+        };
+        res.send({data: response});
+    } else {
+        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
     }
 });
 
