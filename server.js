@@ -23,7 +23,7 @@ expressApp.post('/', function (req, res) {
         card_title: req.body.hasOwnProperty('card') ? req.body.card.name : '',
         comment_text: req.body.hasOwnProperty('comment') ? req.body.comment.text : '',
         person: req.body.sender.name,
-        timestamp: Date.now(),
+        timestamp: new Date(Date.now()).toISOString(),
         meta: {
             id: Date.now(),
             timestamp: Date.now()
@@ -55,44 +55,47 @@ expressApp.get('/ifttt/v1/user/info', function (req, res) {
 });
 
 expressApp.post('/ifttt/v1/triggers/webhook', function (req, res) {
-    const dto = req.body.triggerFields.dto;
-    const event = req.body.triggerFields.event;
-    const boardId = req.body.triggerFields.board;
-    const token = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : null;
-    if (token) {
-        if (req.body.hasOwnProperty('trigger_identity')) {
-            addTriggerIdentity(req.body.trigger_identity);
-        }
-        // console.log(req.headers);
-        // console.log('boardId', boardId);
-        // console.log(queue);
-        queue = queue.filter(item => item.board_id === boardId);
-        if (event !== 'all') {
-            queue = queue.filter(item => item.event.toLowerCase().includes(event.toLowerCase()));
-        }
-        if (dto !== 'all') {
-            switch(dto) {
-                case 'card':
-                    queue = queue.filter(item => item.card_title !== '');
-                    break;
-                case 'column':
-                    queue = queue.filter(item => item.column_title !== '');
-                    break;
-                case 'comment':
-                    queue = queue.filter(item => item.comment_text !== '');
-                    break;
+    if (req.body.hasOwnProperty('triggerFields')) {
+        const dto = req.body.triggerFields.dto;
+        const event = req.body.triggerFields.event;
+        const boardId = req.body.triggerFields.board;
+        const token = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : null;
+        if (token) {
+            if (req.body.hasOwnProperty('trigger_identity')) {
+                addTriggerIdentity(req.body.trigger_identity);
             }
+            // console.log(req.headers);
+            // console.log('boardId', boardId);
+            // console.log(queue);
+            queue = queue.filter(item => item.board_id === boardId);
+            if (event !== 'all') {
+                queue = queue.filter(item => item.event.toLowerCase().includes(event.toLowerCase()));
+            }
+            if (dto !== 'all') {
+                switch(dto) {
+                    case 'card':
+                        queue = queue.filter(item => item.card_title !== '');
+                        break;
+                    case 'column':
+                        queue = queue.filter(item => item.column_title !== '');
+                        break;
+                    case 'comment':
+                        queue = queue.filter(item => item.comment_text !== '');
+                        break;
+                }
+            }
+            console.log('queue is ', queue);
+            const response = {
+                data: queue
+            };
+            queue = [];
+            res.send(response);
+        } else {
+            res.status(401).send({errors: [{"message": "Something went wrong!"}]});
         }
-        console.log('queue is ', queue);
-        const response = {
-            data: queue
-        };
-        queue = [];
-        res.send(response);
     } else {
-        res.status(401).send({errors: [{"message": "Something went wrong!"}]});
+        res.status(400).send({errors: [{"message": "Bad request!"}]});
     }
-
 });
 
 expressApp.post('/ifttt/v1/triggers/webhook/fields/board/options', function (req, res) {
@@ -214,9 +217,9 @@ expressApp.post('/ifttt/v1/test/setup', function (req, res) {
             samples: {
                 triggers: {
                     webhook: {
-                        board: "test",
-                        dto: "test",
-                        event: "test"
+                        board: "5d215f089a48190010c2e25f",
+                        dto: "all",
+                        event: "all"
                     }
                 },
                 actions: {
