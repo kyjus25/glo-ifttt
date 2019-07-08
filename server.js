@@ -233,7 +233,7 @@ function addTriggerIdentity(triggerIdentity) {
     }
 }
 
-var port = process.env.PORT || 4200;
+var port = process.env.PORT || 80;
 expressApp.listen(port, () => console.log('Glo IFTTT listening'));
 
 expressApp.use( express.static(__dirname + '/dist' ) );
