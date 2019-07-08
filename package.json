@@ -5,7 +5,9 @@
   "main": "server.js",
   "preferGlobal": true,
   "scripts": {
-    "start": "node ./server.js"
+    "start": "node ./server.js",
+    "start-pm2": "pm2 start server.js",
+    "stop-pm2": "pm2 delete server"
   },
   "author": "Justin White",
   "license": "MIT",
