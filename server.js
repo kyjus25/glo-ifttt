@@ -25,8 +25,8 @@ expressApp.post('/', function (req, res) {
         person: req.body.sender.name,
         timestamp: new Date(Date.now()).toISOString(),
         meta: {
-            id: Date.now(),
-            timestamp: Date.now()
+            id: new Date(Date.now()).toISOString(),
+            timestamp: new Date(Date.now()).toISOString()
         }
     };
     queue.push(queueItem);
